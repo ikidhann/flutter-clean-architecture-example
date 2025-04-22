@@ -15,7 +15,7 @@ class ApiImpl implements Api {
     try {
       final Response<Map<String, dynamic>> response = await dio
           .get('https://rickandmortyapi.com/api/character/?page=$page');
-      print('page');
+      print('Page: $page');
       final l = (response.data!['results'] as List<dynamic>)
           .map((e) => CharacterDto.fromMap(e))
           .toList();
