@@ -12,21 +12,37 @@ class CharacterPageCubit extends Cubit<CharacterPageState> {
         super(const CharacterPageState());
 
   final GetAllCharacters _getAllCharacters;
+  bool _isThrottling = false;
+  static const Duration throttleDuration = Duration(milliseconds: 100);
 
   Future<void> fetchNextPage() async {
+    if (_isThrottling) return;
+
+    _isThrottling = true;
+    await _fetchNextPage();
+    Future.delayed(throttleDuration, () {
+      _isThrottling = false;
+    });
+  }
+
+  Future<void> _fetchNextPage() async {
     if (state.hasReachedEnd) return;
 
     emit(state.copyWith(status: CharacterPageStatus.loading));
 
-    final list = await _getAllCharacters(page: state.currentPage);
+    try {
+      final list = await _getAllCharacters(page: state.currentPage);
 
-    emit(
-      state.copyWith(
-        status: CharacterPageStatus.success,
-        hasReachedEnd: list.isEmpty,
-        currentPage: state.currentPage + 1,
-        characters: List.of(state.characters)..addAll(list),
-      ),
-    );
+      emit(
+        state.copyWith(
+          status: CharacterPageStatus.success,
+          hasReachedEnd: list.isEmpty,
+          currentPage: state.currentPage + 1,
+          characters: List.of(state.characters)..addAll(list),
+        ),
+      );
+    } catch (e) {
+      emit(state.copyWith(status: CharacterPageStatus.failure));
+    }
   }
 }
